@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Data.SqlClient;
 using System.Data;
+using System.Security.Cryptography;
 using MD5Hash;
 
 namespace PasswordEncryptation
@@ -36,27 +37,25 @@ namespace PasswordEncryptation
             string encrypt = TextToEncrypt.Text;
             EncryptedText.Text = MD5Hash.Hash.Content(encrypt);
 
-            SqlConnectionStringBuilder scsb = new SqlConnectionStringBuilder();
-            scsb.DataSource = "DESKTOP-644QAJI";
-            scsb.InitialCatalog = "ProyectoAzure";
-            scsb.UserID = "sa";
-            scsb.Password = "casita123";
-
-            SqlConnection sqlConnection = new SqlConnection(scsb.ConnectionString);
-            sqlConnection.Open();
-
-            SqlCommand sqlCommand = new SqlCommand("INSERT INTO TextoEncriptado VALUES (@Texto, @Encripcion)", sqlConnection);
-
-            sqlCommand.Parameters.Add("@Texto", SqlDbType.VarChar).Value = encrypt;
-            sqlCommand.Parameters.Add("@Encripcion", SqlDbType.VarChar).Value = EncryptedText.Text;
-
-            var response = sqlCommand.ExecuteNonQuery();
-
-            sqlConnection.Close();
+            SaveValues();
         }
 
         private void SHA1Button_Click(object sender, RoutedEventArgs e)
         {
+            string encrypt = TextToEncrypt.Text;
+
+            SHA1 sha1 = SHA1CryptoServiceProvider.Create();
+            Byte[] OGText = ASCIIEncoding.Default.GetBytes(encrypt);
+            Byte[] hash = sha1.ComputeHash(OGText);
+            StringBuilder textstring = new StringBuilder();
+            foreach (byte i in hash)
+            {
+                textstring.AppendFormat("{0:x2}", i);
+            }
+            EncryptedText.Text = textstring.ToString();
+
+            SaveValues();
+
 
         }
 
@@ -93,5 +92,27 @@ namespace PasswordEncryptation
 
         }
 
+
+
+        private void SaveValues()
+        {
+            SqlConnectionStringBuilder scsb = new SqlConnectionStringBuilder();
+            scsb.DataSource = "DESKTOP-644QAJI";
+            scsb.InitialCatalog = "ProyectoAzure";
+            scsb.UserID = "sa";
+            scsb.Password = "casita123";
+
+            SqlConnection sqlConnection = new SqlConnection(scsb.ConnectionString);
+            sqlConnection.Open();
+
+            SqlCommand sqlCommand = new SqlCommand("INSERT INTO TextoEncriptado VALUES (@Texto, @Encripcion)", sqlConnection);
+
+            sqlCommand.Parameters.Add("@Texto", SqlDbType.VarChar).Value = TextToEncrypt.Text;
+            sqlCommand.Parameters.Add("@Encripcion", SqlDbType.VarChar).Value = EncryptedText.Text;
+
+            var response = sqlCommand.ExecuteNonQuery();
+
+            sqlConnection.Close();
+        }
     }
 }
